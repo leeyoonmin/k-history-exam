@@ -2225,7 +2225,57 @@ window.KHistoryEngine = {
     });
   },
 
-  // Generate a single random or AI-requested question (supports live LLM API + instant Knowledge-Graph AI fallback)
+  // Argon (gemini-4-argon) Endpoints: supports both same-origin local server & Cloudflare Tunnel (so GitHub Pages also uses the local GEMINI_API_KEY!)
+  argonEndpoints: [
+    './api',
+    'https://pink-those-blogging-taxi.trycloudflare.com/api'
+  ],
+
+  async fetchArgonApi(subPath, payload, timeoutMs = 20000) {
+    for (const base of this.argonEndpoints) {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+        const res = await fetch(`${base}${subPath}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        }).catch(() => null);
+        clearTimeout(tid);
+        if (res && res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+    }
+    return null;
+  },
+
+  async requestArgonExamBatch(count = 5) {
+    const data = await this.fetchArgonApi('/ai-exam-batch', { count }, 32000);
+    if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+      return data.questions.map((parsed, idx) => ({
+        uid: `argon_batch_${Date.now()}_${idx}`,
+        qNum: idx + 1,
+        era: parsed.era || 'era4',
+        eraName: parsed.eraName || '한국사',
+        title: parsed.title || '아르곤 AI 출제 문항',
+        points: Number(parsed.points) || 2,
+        stem: parsed.stem,
+        source: parsed.source,
+        choices: parsed.choices,
+        answer: Number(parsed.answer) || 0,
+        keywords: parsed.keywords || [],
+        explanation: parsed.explanation || '',
+        choiceDetails: parsed.choiceDetails || [],
+        aiGenerated: true,
+        llmBadge: '🤖 Argon(gemini-4-argon) 실시간 출제'
+      }));
+    }
+    return [];
+  },
+
+  // Generate a single random or AI-requested question via gemini-4-argon (using local GEMINI_API_KEY)
   async generateSingleAiQuestion(eraFilter = 'all', useLiveLlm = false, apiKey = '') {
     const pool = eraFilter === 'all'
       ? this.topics
@@ -2234,8 +2284,36 @@ window.KHistoryEngine = {
 
     if (useLiveLlm) {
       try {
-        const eraLabel = eraFilter === 'all' ? picked.eraName : picked.eraName;
-        const prompt = `당신은 대한민국 한국사능력검정시험(심화 1~3급) 출제위원입니다.
+        // 1) Primary: Local Server / Tunnel Proxy using local ~/.hermes/.env GEMINI_API_KEY + gemini-4-argon!
+        const proxyParsed = await this.fetchArgonApi('/ai-question', {
+          era: eraFilter === 'all' ? picked.era : eraFilter,
+          eraName: picked.eraName,
+          hintTitle: picked.title
+        }, 22000);
+
+        if (proxyParsed && Array.isArray(proxyParsed.choices) && proxyParsed.choices.length === 5) {
+          return {
+            uid: 'argon_local_' + Date.now(),
+            qNum: 1,
+            era: proxyParsed.era || picked.era,
+            eraName: proxyParsed.eraName || picked.eraName,
+            title: proxyParsed.title || picked.title,
+            points: Number(proxyParsed.points) || 2,
+            stem: proxyParsed.stem,
+            source: proxyParsed.source,
+            choices: proxyParsed.choices,
+            answer: Number(proxyParsed.answer) || 0,
+            keywords: proxyParsed.keywords || picked.keywords,
+            explanation: proxyParsed.explanation,
+            choiceDetails: proxyParsed.choiceDetails || [],
+            aiGenerated: true,
+            llmBadge: '🤖 Argon(gemini-4-argon) 실시간 출제'
+          };
+        }
+
+        // 2) Secondary: Direct gemini-4-argon call if user entered a custom API key
+        const eraLabel = picked.eraName;
+        const prompt = `당신은 대한민국 한국사능력검정시험(심화 1~3급) 출제위원(gemini-4-argon)입니다.
 시대: [${eraLabel}], 주제 힌트: [${picked.title} 또는 해당 시대의 다른 중요 주제]
 사료 박스 지문이 포함된 5지선다형 객관식 문제 1개를 출제하여 반드시 순수 JSON 객체로만 응답하세요.
 형식:
@@ -2244,7 +2322,7 @@ window.KHistoryEngine = {
   "title": "문제 핵심 주제명",
   "points": 2,
   "stem": "다음 자료에 나타난 왕(또는 사건/단체/제도)에 대한 설명으로 옳은 것은?",
-  "source": "【사료】\n실제 역사 사료 풍의 구체적인 3~4문장 지문",
+  "source": "【사료】\\n실제 역사 사료 풍의 구체적인 3~4문장 지문",
   "choices": ["선지1", "선지2", "선지3", "선지4", "선지5"],
   "answer": 0,
   "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"],
@@ -2252,23 +2330,27 @@ window.KHistoryEngine = {
   "choiceDetails": ["① 선지 해설", "② 선지 해설", "③ 선지 해설", "④ 선지 해설", "⑤ 선지 해설"]
 }`;
 
-        // 1) Try user-provided Gemini API Key if configured
         if (apiKey && apiKey.startsWith('AIza')) {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-4-argon:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: 'application/json', temperature: 0.8 }
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.85,
+                thinkingConfig: { thinkingBudget: 0 }
+              }
             })
           });
           if (res.ok) {
             const data = await res.json();
-            const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const parts = data?.candidates?.[0]?.content?.parts || [];
+            const txt = parts[parts.length - 1]?.text || '';
             const parsed = JSON.parse(txt.replace(/```json|```/g, '').trim());
             if (parsed && Array.isArray(parsed.choices) && parsed.choices.length === 5) {
               return {
-                uid: 'llm_gemini_' + Date.now(),
+                uid: 'llm_argon_direct_' + Date.now(),
                 qNum: 1,
                 era: picked.era,
                 eraName: parsed.eraName || picked.eraName,
@@ -2282,86 +2364,9 @@ window.KHistoryEngine = {
                 explanation: parsed.explanation,
                 choiceDetails: parsed.choiceDetails || [],
                 aiGenerated: true,
-                llmBadge: '✨ Gemini AI 실시간 출제'
+                llmBadge: '🤖 Argon(gemini-4-argon) 실시간 출제'
               };
             }
-          }
-        }
-
-        // 2) Try local/tunnel backend proxy (/api/ai-question) if available
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 6500);
-        const proxyRes = await fetch('./api/ai-question', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ era: picked.era, eraName: picked.eraName, hintTitle: picked.title }),
-          signal: ctrl.signal
-        }).catch(() => null);
-        clearTimeout(tid);
-
-        if (proxyRes && proxyRes.ok) {
-          const parsed = await proxyRes.json();
-          if (parsed && Array.isArray(parsed.choices) && parsed.choices.length === 5) {
-            return {
-              uid: 'llm_proxy_' + Date.now(),
-              qNum: 1,
-              era: picked.era,
-              eraName: parsed.eraName || picked.eraName,
-              title: parsed.title || picked.title,
-              points: parsed.points || 2,
-              stem: parsed.stem,
-              source: parsed.source,
-              choices: parsed.choices,
-              answer: Number(parsed.answer) || 0,
-              keywords: parsed.keywords || picked.keywords,
-              explanation: parsed.explanation,
-              choiceDetails: parsed.choiceDetails || [],
-              aiGenerated: true,
-              llmBadge: '🤖 Gemini AI 실시간 출제'
-            };
-          }
-        }
-
-        // 3) Try Public Free AI Endpoint (for GitHub Pages static hosting without API key)
-        const pubCtrl = new AbortController();
-        const pubTid = setTimeout(() => pubCtrl.abort(), 9000);
-        const pubRes = await fetch('https://text.pollinations.ai/openai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'openai',
-            response_format: { type: 'json_object' },
-            messages: [
-              { role: 'system', content: '당신은 한국사능력검정시험(심화) 전문 출제위원입니다. 오직 유효한 JSON 객체만 출력하세요.' },
-              { role: 'user', content: prompt }
-            ]
-          }),
-          signal: pubCtrl.signal
-        }).catch(() => null);
-        clearTimeout(pubTid);
-
-        if (pubRes && pubRes.ok) {
-          const pubData = await pubRes.json();
-          const rawTxt = pubData?.choices?.[0]?.message?.content || '';
-          const parsed = JSON.parse(rawTxt.replace(/```json|```/g, '').trim());
-          if (parsed && Array.isArray(parsed.choices) && parsed.choices.length === 5) {
-            return {
-              uid: 'llm_pub_' + Date.now(),
-              qNum: 1,
-              era: picked.era,
-              eraName: parsed.eraName || picked.eraName,
-              title: parsed.title || picked.title,
-              points: parsed.points || 2,
-              stem: parsed.stem,
-              source: parsed.source,
-              choices: parsed.choices,
-              answer: Number(parsed.answer) || 0,
-              keywords: parsed.keywords || picked.keywords,
-              explanation: parsed.explanation,
-              choiceDetails: parsed.choiceDetails || [],
-              aiGenerated: true,
-              llmBadge: '✨ AI 출제위원 실시간 생성'
-            };
           }
         }
       } catch (e) {
@@ -2370,7 +2375,7 @@ window.KHistoryEngine = {
     }
 
     const q = this.synthesizeFromTopic(picked, 1, Math.floor(Math.random() * 100));
-    q.llmBadge = '⚡ AI 사료 조합 출제';
+    q.llmBadge = '⚡ Argon 사료 지식그래프 출제';
     return q;
   }
 };

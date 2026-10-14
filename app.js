@@ -153,14 +153,15 @@
     });
   }
 
-  // Generate a brand-new 50-question AI Mock Exam round!
-  document.getElementById('btnGenerateNewExam').addEventListener('click', () => {
+  // Generate a brand-new 50-question AI Mock Exam round (with live gemini-4-argon batch injection!)
+  document.getElementById('btnGenerateNewExam').addEventListener('click', async () => {
     const nextRound = store.examRounds.length + 1;
+    const baseQuestions = window.KHistoryEngine.generateFull50Exam(nextRound + Math.floor(Math.random() * 1000));
     const newExam = {
       round: nextRound,
-      title: `제${nextRound}회 AI 한국사 심화 실전 모의고사`,
+      title: `제${nextRound}회 Argon AI 한국사 실전 모의고사`,
       createdAt: new Date().toLocaleDateString('ko-KR'),
-      questions: window.KHistoryEngine.generateFull50Exam(nextRound + Math.floor(Math.random() * 1000)),
+      questions: baseQuestions,
       userAnswers: new Array(50).fill(-1),
       starred: new Array(50).fill(false),
       remainSec: 80 * 60,
@@ -171,8 +172,28 @@
     saveState();
     activeExamIdx = store.examRounds.length - 1;
     activeQIdx = 0;
-    showToast(`🤖 제${nextRound}회 50문항 AI 모의고사가 새로 생성되었습니다!`);
+    showToast(`🤖 Argon AI가 제${nextRound}회 50문항 모의고사를 출제 중입니다...`);
     switchTab('tabExam');
+
+    // Asynchronously inject live gemini-4-argon generated questions into the exam!
+    try {
+      const argonBatch = await window.KHistoryEngine.requestArgonExamBatch(4);
+      if (argonBatch && argonBatch.length > 0) {
+        argonBatch.forEach((aq, idx) => {
+          const slot = idx; // Replace first questions with live Argon questions if not answered yet
+          if (newExam.userAnswers[slot] === -1 && Array.isArray(aq.choices) && aq.choices.length === 5) {
+            aq.qNum = slot + 1;
+            aq.points = newExam.questions[slot].points;
+            newExam.questions[slot] = aq;
+          }
+        });
+        saveState();
+        if (currentTab === 'tabExam' && activeExamIdx === store.examRounds.indexOf(newExam)) {
+          renderActiveExam();
+        }
+        showToast(`✨ Argon(gemini-4-argon) 실시간 신규 사료 문항이 반영되었습니다!`);
+      }
+    } catch (e) {}
   });
 
   document.getElementById('btnQuickRandomStart').addEventListener('click', () => {
@@ -204,8 +225,8 @@
 
     if (useLiveLlm) {
       aiBtn.disabled = false;
-      aiBtn.innerHTML = '<span>🤖 AI 실시간 신규출제</span>';
-      showToast(`${q.llmBadge || '🤖 AI 신규 문제'} 출제 완료!`);
+      aiBtn.innerHTML = '<span>🤖 Argon AI 실시간 출제</span>';
+      showToast(`${q.llmBadge || '🤖 Argon AI 신규 문제'} 출제 완료!`);
     }
 
     renderRandomQuestion();
