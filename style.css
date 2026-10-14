@@ -65,8 +65,14 @@ html, body {
 .brand-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
+  flex: 1;
+}
+
+.brand-text-wrap {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .brand-logo {
@@ -630,14 +636,15 @@ html, body {
 /* ================= STICKY PRACTICE ACTION BAR ================= */
 .sticky-practice-bar {
   position: sticky;
-  bottom: 0;
-  background: rgba(241, 245, 249, 0.95);
-  backdrop-filter: blur(6px);
-  padding: 8px 0 2px 0;
+  bottom: -18px;
+  margin: 4px -12px -18px -12px;
+  background: #f1f5f9;
+  border-top: 1.5px solid #cbd5e1;
+  padding: 10px 12px 12px 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  z-index: 20;
+  z-index: 30;
 }
 
 .sticky-practice-bar.three-btns {
