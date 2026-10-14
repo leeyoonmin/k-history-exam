@@ -385,6 +385,388 @@ html, body {
   color: #ffffff;
 }
 
+.type-chip {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.type-chip.active {
+  background: #0f172a;
+  border-color: #f59e0b;
+  color: #fef08a;
+}
+
+/* ================= 6 VISUAL QUESTION FORMATS (한능검 실제 출제 유형) ================= */
+.visual-box-wrap {
+  width: 100%;
+}
+
+/* 1. 🖼️ PHOTO / RELIC SHOWCASE CARD */
+.vbox-photo {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+.vbox-photo-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: radial-gradient(circle at 22% 50%, rgba(250, 204, 21, 0.22), transparent 65%);
+}
+
+.vbox-relic-illust {
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  background: #f8fafc;
+  border: 2.5px solid #f59e0b;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.vbox-relic-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vbox-relic-tag {
+  display: inline-block;
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.vbox-relic-name {
+  font-size: 0.94rem;
+  font-weight: 900;
+  color: #fef08a;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.vbox-relic-sub {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.vbox-photo-detail {
+  background: #fdfbf7;
+  color: #1e293b;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-top: 2px solid #f59e0b;
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
+/* 2. 🗺️ HISTORICAL MAP DIAGRAM CARD */
+.vbox-map {
+  background: #eff6ff;
+  border: 2px solid #1d4ed8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vbox-map-head {
+  background: #1e3a8a;
+  color: #ffffff;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vbox-map-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.vbox-map-svg-box {
+  width: 108px;
+  height: 132px;
+  flex-shrink: 0;
+  background: #bae6fd;
+  border: 2px solid #0284c7;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vbox-map-routes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.map-route-step {
+  background: #ffffff;
+  border: 1.5px solid #93c5fd;
+  border-left: 4px solid #dc2626;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.32;
+  word-break: keep-all;
+}
+
+.map-spot-footer {
+  background: #dbeafe;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: #1e40af;
+  border-top: 1px solid #93c5fd;
+}
+
+/* 3. ⏳ GRAPHIC TIMELINE CARD */
+.vbox-timeline {
+  background: #f8fafc;
+  border: 2px solid #475569;
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+
+.vbox-tl-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  margin-bottom: 8px;
+  border-bottom: 1.5px dashed #cbd5e1;
+  padding-bottom: 4px;
+}
+
+.vbox-tl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.vbox-tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.38;
+  word-break: keep-all;
+}
+
+.vbox-tl-item.highlight {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.vbox-tl-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 4. 💬 SPEECH BUBBLE DIALOGUE CARD */
+.vbox-chat {
+  background: #e2e8f0;
+  border: 2px solid #64748b;
+  border-radius: 12px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vbox-chat-head {
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: #334155;
+  text-align: center;
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.chat-bubble-row.right {
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #ffffff;
+}
+
+.chat-bubble-row.right .chat-avatar {
+  background: #b45309;
+}
+
+.chat-bubble {
+  background: #ffffff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.42;
+  word-break: keep-all;
+}
+
+.chat-bubble-row.right .chat-bubble {
+  background: #fef9c3;
+  border-color: #eab308;
+}
+
+.chat-speaker-name {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #475569;
+  margin-bottom: 2px;
+}
+
+/* 5. 📊 COMPARISON TABLE / ORG CHART CARD */
+.vbox-chart {
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vbox-chart-head {
+  background: #0f172a;
+  color: #fef08a;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.vbox-chart-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.vbox-chart-row {
+  padding: 9px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.42;
+  word-break: keep-all;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vbox-chart-row:last-child {
+  border-bottom: none;
+}
+
+.chart-bullet {
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* 6. 📰 VINTAGE HISTORICAL NEWSPAPER CARD */
+.vbox-news {
+  background: #f5f0e1;
+  border: 2.5px solid #292524;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #1c1917;
+}
+
+.vbox-news-masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2.5px double #292524;
+  padding-bottom: 4px;
+  margin-bottom: 7px;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.vbox-news-headline {
+  background: #292524;
+  color: #fef08a;
+  padding: 5px 9px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  margin-bottom: 7px;
+  border-radius: 4px;
+}
+
+.vbox-news-body {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.52;
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
 /* ================= QUESTION PAPER CARD ================= */
 .question-paper-card {
   background: #ffffff;

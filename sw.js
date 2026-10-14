@@ -1,4 +1,4 @@
-const CACHE_NAME = 'k-history-exam-v5';
+const CACHE_NAME = 'k-history-exam-v6';
 const STATIC_ASSETS = [
   './',
   './index.html',

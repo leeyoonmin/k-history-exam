@@ -53,11 +53,188 @@
     saveState();
   }
 
-  // Active runtime state
+  //Active runtime state
   let currentTab = 'tabHome';
   let randomEraFilter = 'all';
+  let randomTypeFilter = 'all';
   let currentRandomQ = null;
   let randomAnswered = false;
+
+  // Hydrate any saved exam questions with the latest visualType & visualData from KHISTORY_TOPICS
+  const topicById = {};
+  (window.KHISTORY_TOPICS || []).forEach(t => { topicById[t.id] = t; });
+  store.examRounds.forEach(ex => {
+    (ex.questions || []).forEach(q => {
+      if (!q.visualType && q.topicId && topicById[q.topicId]) {
+        q.visualType = topicById[q.topicId].visualType;
+        q.visualData = topicById[q.topicId].visualData;
+      }
+    });
+  });
+
+  function getRelicSvg(iconType) {
+    if (iconType === 'comb_pottery') {
+      return `<svg viewBox="0 0 80 80" width="64" height="64"><path d="M18 16 H62 L56 54 Q40 72 24 54 Z" fill="#c27838" stroke="#451a03" stroke-width="3"/><line x1="24" y1="26" x2="34" y2="36" stroke="#451a03" stroke-width="2"/><line x1="34" y1="26" x2="44" y2="36" stroke="#451a03" stroke-width="2"/><line x1="44" y1="26" x2="54" y2="36" stroke="#451a03" stroke-width="2"/><line x1="26" y1="42" x2="36" y2="50" stroke="#451a03" stroke-width="2"/><line x1="38" y1="42" x2="48" y2="50" stroke="#451a03" stroke-width="2"/></svg>`;
+    }
+    if (iconType === 'handaxe') {
+      return `<svg viewBox="0 0 80 80" width="64" height="64"><path d="M40 10 L58 38 L50 66 Q40 72 30 66 L22 38 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="3"/><path d="M40 12 L40 66 M26 38 L54 38" stroke="#475569" stroke-width="2"/></svg>`;
+    }
+    if (iconType === 'bronze_dagger' || iconType === 'slim_dagger') {
+      return `<svg viewBox="0 0 80 80" width="64" height="64"><path d="M40 8 L49 28 Q56 42 46 52 L46 66 H34 L34 52 Q24 42 31 28 Z" fill="#10b981" stroke="#064e3b" stroke-width="3"/><line x1="40" y1="10" x2="40" y2="56" stroke="#064e3b" stroke-width="2.5"/></svg>`;
+    }
+    if (iconType === 'incense_burner') {
+      return `<svg viewBox="0 0 80 80" width="64" height="64"><circle cx="40" cy="14" r="6" fill="#f59e0b" stroke="#78350f" stroke-width="2"/><path d="M24 36 Q40 18 56 36 Q60 54 40 58 Q20 54 24 36 Z" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/><rect x="35" y="58" width="10" height="10" fill="#d97706"/><path d="M22 68 H58" stroke="#78350f" stroke-width="4"/></svg>`;
+    }
+    if (iconType === 'sundial') {
+      return `<svg viewBox="0 0 80 80" width="64" height="64"><path d="M14 34 A26 26 0 0 0 66 34 Z" fill="#fbbf24" stroke="#1e293b" stroke-width="3"/><line x1="40" y1="34" x2="50" y2="20" stroke="#dc2626" stroke-width="3"/><rect x="24" y="60" width="32" height="8" fill="#475569"/></svg>`;
+    }
+    return `<svg viewBox="0 0 80 80" width="64" height="64"><rect x="16" y="12" width="48" height="56" rx="6" fill="#fef3c7" stroke="#92400e" stroke-width="3"/><line x1="24" y1="26" x2="56" y2="26" stroke="#92400e" stroke-width="2.5"/><line x1="24" y1="38" x2="56" y2="38" stroke="#92400e" stroke-width="2.5"/><line x1="24" y1="50" x2="46" y2="50" stroke="#92400e" stroke-width="2.5"/></svg>`;
+  }
+
+  function getKoreaMapSvg() {
+    return `<svg viewBox="0 0 110 135" width="104" height="128">
+      <rect width="110" height="135" fill="#bae6fd"/>
+      <!-- Korean Peninsula & Manchuria stylized outline -->
+      <path d="M8 8 L102 8 L102 42 L78 52 L68 68 L76 92 L72 114 L52 120 L42 104 L44 82 L32 66 L38 48 L12 36 Z" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+      <!-- Rivers -->
+      <path d="M38 48 Q54 44 64 36" fill="none" stroke="#0284c7" stroke-width="1.8"/>
+      <path d="M44 80 Q58 82 66 76" fill="none" stroke="#0284c7" stroke-width="1.8"/>
+      <!-- Strategic Red Arrows & Markers -->
+      <circle cx="48" cy="58" r="4" fill="#dc2626"/>
+      <circle cx="54" cy="80" r="4" fill="#1e3a8a"/>
+      <circle cx="66" cy="104" r="4" fill="#d97706"/>
+      <path d="M48 58 Q56 68 54 78" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="3,2"/>
+      <polygon points="54,80 50,74 58,74" fill="#dc2626"/>
+      <ellipse cx="48" cy="128" rx="7" ry="3.5" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+    </svg>`;
+  }
+
+  // Render 6 Authentic Korean History Exam Visual Formats!
+  function buildVisualBoxHtml(q) {
+    const vtype = q.visualType || 'scroll';
+    const vd = q.visualData || {};
+    const typeBadges = {
+      photo: '🖼️ 유물·문화유산 자료형',
+      map: '🗺️ 역사 지도·경로 추론형',
+      timeline: '⏳ 연표·시대순 추론형',
+      chat: '💬 역사 상황 대화형',
+      chart: '📊 구조·제도 비교표형',
+      newspaper: '📰 역사 신문·호외 기사형',
+      scroll: '📜 고문서·사료 원문형'
+    };
+
+    if (vtype === 'photo') {
+      const detailTxt = vd.detail || q.source;
+      return `
+        <div class="vbox-photo">
+          <div class="vbox-photo-top">
+            <div class="vbox-relic-illust">${getRelicSvg(vd.iconType)}</div>
+            <div class="vbox-relic-info">
+              <span class="vbox-relic-tag">${typeBadges.photo}</span>
+              <div class="vbox-relic-name">${vd.relicName || q.title}</div>
+              <div class="vbox-relic-sub">${vd.sub || q.eraName}</div>
+            </div>
+          </div>
+          <div class="vbox-photo-detail">${detailTxt}</div>
+        </div>
+      `;
+    }
+
+    if (vtype === 'map') {
+      const arrows = Array.isArray(vd.arrows) ? vd.arrows : [];
+      const routesHtml = arrows.length > 0
+        ? arrows.map(a => `<div class="map-route-step">🚩 <b>${a.from}</b> ➔ ${a.to}</div>`).join('')
+        : `<div class="map-route-step">${q.source}</div>`;
+      return `
+        <div class="vbox-map">
+          <div class="vbox-map-head">
+            <span>🗺️ ${vd.mapTitle || q.title}</span>
+            <span>${q.eraName}</span>
+          </div>
+          <div class="vbox-map-body">
+            <div class="vbox-map-svg-box">${getKoreaMapSvg()}</div>
+            <div class="vbox-map-routes">${routesHtml}</div>
+          </div>
+          <div class="map-spot-footer">📍 주요 지점: ${vd.spot || q.title}</div>
+        </div>
+      `;
+    }
+
+    if (vtype === 'timeline') {
+      const steps = Array.isArray(vd.steps) && vd.steps.length > 0
+        ? vd.steps
+        : q.source.split('\n').filter(Boolean);
+      const stepsHtml = steps.map((st, idx) => {
+        const isBlank = st.includes('(가)') || st.includes('(나)');
+        return `
+          <div class="vbox-tl-item ${isBlank ? 'highlight' : ''}">
+            <span class="vbox-tl-dot">${idx + 1}</span>
+            <span>${st}</span>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="vbox-timeline">
+          <div class="vbox-tl-title">${vd.timelineTitle || `⏳ ${q.eraName} 연표 자료`}</div>
+          <div class="vbox-tl-list">${stepsHtml}</div>
+        </div>
+      `;
+    }
+
+    if (vtype === 'chat') {
+      const msgs = Array.isArray(vd.messages) && vd.messages.length > 0
+        ? vd.messages
+        : [{ speaker: '역사 인물', side: 'left', text: q.source }];
+      const msgsHtml = msgs.map(m => `
+        <div class="chat-bubble-row ${m.side === 'right' ? 'right' : ''}">
+          <div class="chat-avatar">${m.side === 'right' ? '🎓' : '🧑'}</div>
+          <div>
+            <div class="chat-speaker-name" style="text-align:${m.side === 'right' ? 'right' : 'left'}">${m.speaker}</div>
+            <div class="chat-bubble">${m.text}</div>
+          </div>
+        </div>
+      `).join('');
+      return `
+        <div class="vbox-chat">
+          <div class="vbox-chat-head">${vd.chatTitle || `💬 역사 탐구 대화 (${q.eraName})`}</div>
+          ${msgsHtml}
+        </div>
+      `;
+    }
+
+    if (vtype === 'chart') {
+      const rows = Array.isArray(vd.rows) && vd.rows.length > 0
+        ? vd.rows
+        : q.source.split('\n').filter(Boolean);
+      const rowsHtml = rows.map((r, idx) => `
+        <div class="vbox-chart-row">
+          <span class="chart-bullet">항목 ${idx + 1}</span>
+          <span>${r}</span>
+        </div>
+      `).join('');
+      return `
+        <div class="vbox-chart">
+          <div class="vbox-chart-head">${vd.chartTitle || `📊 ${q.eraName} 핵심 비교·구조표`}</div>
+          <div class="vbox-chart-rows">${rowsHtml}</div>
+        </div>
+      `;
+    }
+
+    if (vtype === 'newspaper') {
+      return `
+        <div class="vbox-news">
+          <div class="vbox-news-masthead">
+            <span>📰 ${vd.paperName || '大韓歷史新聞 (호외)'}</span>
+            <span>[${vd.eraLabel || q.eraName}]</span>
+          </div>
+          <div class="vbox-news-headline">${vd.headline || q.title}</div>
+          <div class="vbox-news-body">${vd.body || q.source}</div>
+        </div>
+      `;
+    }
+
+    return `<div class="qp-source-box">${q.source}</div>`;
+  }
 
   let activeExamIdx = 0; // index in store.examRounds
   let activeQIdx = 0;    // 0..49
@@ -210,6 +387,15 @@
     });
   });
 
+  document.querySelectorAll('#randomTypeFilterBar .type-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#randomTypeFilterBar .type-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      randomTypeFilter = chip.getAttribute('data-vtype');
+      loadNextRandomQuestion(false);
+    });
+  });
+
   async function loadNextRandomQuestion(useLiveLlm = false) {
     randomAnswered = false;
     document.getElementById('rqExplanationBox').classList.add('hidden');
@@ -220,7 +406,7 @@
       aiBtn.innerHTML = '<span>⏳ AI 출제위원 생성 중...</span>';
     }
 
-    const q = await window.KHistoryEngine.generateSingleAiQuestion(randomEraFilter, useLiveLlm, store.geminiKey);
+    const q = await window.KHistoryEngine.generateSingleAiQuestion(randomEraFilter, useLiveLlm, store.geminiKey, randomTypeFilter);
     currentRandomQ = q;
 
     if (useLiveLlm) {
@@ -241,7 +427,9 @@
     document.getElementById('rqStreakText').textContent = `🔥 연속 ${store.streak}정답`;
 
     document.getElementById('rqStem').textContent = q.stem;
-    document.getElementById('rqSourceBox').textContent = q.source;
+    const srcContainer = document.getElementById('rqSourceBox');
+    srcContainer.className = 'visual-box-wrap';
+    srcContainer.innerHTML = buildVisualBoxHtml(q);
 
     const listEl = document.getElementById('rqChoicesList');
     listEl.innerHTML = '';
@@ -393,7 +581,9 @@
     starBtn.textContent = isStarred ? '★ 별표됨' : '☆ 별표 체크';
 
     document.getElementById('exStem').textContent = `${activeQIdx + 1}. ${q.stem}`;
-    document.getElementById('exSourceBox').textContent = q.source;
+    const exSrc = document.getElementById('exSourceBox');
+    exSrc.className = 'visual-box-wrap';
+    exSrc.innerHTML = buildVisualBoxHtml(q);
 
     const listEl = document.getElementById('exChoicesList');
     listEl.innerHTML = '';
