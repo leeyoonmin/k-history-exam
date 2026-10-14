@@ -125,13 +125,16 @@
 
     if (vtype === 'photo') {
       const detailTxt = vd.detail || q.source;
+      const safeRelicTitle = (vd.relicName && !vd.relicName.includes(q.title.split(' ')[0]))
+        ? vd.relicName
+        : `${q.eraName} 대표 유물·문화유산 자료`;
       return `
         <div class="vbox-photo">
           <div class="vbox-photo-top">
             <div class="vbox-relic-illust">${getRelicSvg(vd.iconType)}</div>
             <div class="vbox-relic-info">
               <span class="vbox-relic-tag">${typeBadges.photo}</span>
-              <div class="vbox-relic-name">${vd.relicName || q.title}</div>
+              <div class="vbox-relic-name">${safeRelicTitle}</div>
               <div class="vbox-relic-sub">${vd.sub || q.eraName}</div>
             </div>
           </div>
@@ -148,14 +151,14 @@
       return `
         <div class="vbox-map">
           <div class="vbox-map-head">
-            <span>🗺️ ${vd.mapTitle || q.title}</span>
-            <span>${q.eraName}</span>
+            <span>🗺️ ${q.eraName} 주요 역사 지도 자료</span>
+            <span>경로·영토 추론</span>
           </div>
           <div class="vbox-map-body">
             <div class="vbox-map-svg-box">${getKoreaMapSvg()}</div>
             <div class="vbox-map-routes">${routesHtml}</div>
           </div>
-          <div class="map-spot-footer">📍 주요 지점: ${vd.spot || q.title}</div>
+          <div class="map-spot-footer">📍 지도에 표시된 경로와 시기를 바탕으로 정답을 추론하세요</div>
         </div>
       `;
     }
@@ -421,8 +424,17 @@
   function renderRandomQuestion() {
     if (!currentRandomQ) return;
     const q = currentRandomQ;
+    const vtypeLabels = {
+      photo: '🖼️ 유물·문화재형',
+      map: '🗺️ 역사 지도형',
+      timeline: '⏳ 연표·순서형',
+      chat: '💬 인물 대화형',
+      chart: '📊 비교표·제도형',
+      newspaper: '📰 역사 신문형',
+      scroll: '📜 고문서 사료형'
+    };
     document.getElementById('rqEraBadge').textContent = q.eraName;
-    document.getElementById('rqPointsBadge').textContent = `${q.points}점 · ${q.title}`;
+    document.getElementById('rqPointsBadge').textContent = `${q.points}점 · ${vtypeLabels[q.visualType] || '기출 핵심 유형'}`;
     document.getElementById('rqAiBadge').textContent = q.llmBadge || '⚡ AI 사료 조합';
     document.getElementById('rqStreakText').textContent = `🔥 연속 ${store.streak}정답`;
 
@@ -464,6 +476,7 @@
     saveState();
 
     document.getElementById('rqStreakText').textContent = `🔥 연속 ${store.streak}정답`;
+    document.getElementById('rqPointsBadge').textContent = `${q.points}점 · 출제 주제: ${q.title}`;
 
     const choiceBtns = document.querySelectorAll('#rqChoicesList .choice-option-btn');
     choiceBtns.forEach((btn, idx) => {
