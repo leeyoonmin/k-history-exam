@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="한능검 AI" />
+  <title>한능검 AI 마스터 — 50문항 모의고사 &amp; 스피드 풀이</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./assets/icons/favicon.png" />
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;800;900&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="appShell" class="app-shell">
+    <!-- TOP HEADER BAR -->
+    <header class="app-header">
+      <div class="brand-row">
+        <img src="./assets/icons/favicon.png" alt="한능검" class="brand-logo" />
+        <div>
+          <h1 class="brand-title">한능검 AI 마스터</h1>
+          <p class="brand-sub">심화(1·2·3급) AI 모의고사 &amp; 사료 스피드 풀이</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnOpenAiModal" class="hdr-btn ai-badge-btn" type="button">🤖 AI 설정</button>
+        <button id="btnInstallPwa" class="hdr-btn" type="button">📲 앱 설치</button>
+        <button id="btnForceRefresh" class="hdr-btn icon-only" type="button" title="최신 버전 새로고침">🔄</button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA (4 TABS) -->
+    <main class="app-main">
+      <!-- ================= TAB 1: HOME & 50-QUESTION MOCK EXAM LIST ================= -->
+      <section id="tabHome" class="tab-view active">
+        <!-- Dashboard Summary Card -->
+        <div class="dashboard-card">
+          <div class="dash-top">
+            <div>
+              <span class="dash-pill">심화 1·2·3급 대비</span>
+              <h2 class="dash-headline">나의 한국사 합격 리포트</h2>
+            </div>
+            <div id="predictedGradeBadge" class="grade-badge">1급 목표</div>
+          </div>
+          <div class="dash-stats-grid">
+            <div class="dash-stat-box">
+              <span class="stat-lbl">누적 풀이 문항</span>
+              <strong id="statSolvedCount" class="stat-val">0문항</strong>
+            </div>
+            <div class="dash-stat-box">
+              <span class="stat-lbl">모의고사 최고점</span>
+              <strong id="statBestScore" class="stat-val">- 점</strong>
+            </div>
+            <div class="dash-stat-box">
+              <span class="stat-lbl">스피드 정답률</span>
+              <strong id="statAccuracy" class="stat-val">0%</strong>
+            </div>
+            <div class="dash-stat-box">
+              <span class="stat-lbl">오답노트 보관</span>
+              <strong id="statWrongCount" class="stat-val">0개</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Hero Buttons -->
+        <div class="hero-actions-grid">
+          <button id="btnGenerateNewExam" class="hero-action-card primary" type="button">
+            <div class="hac-badge">🤖 AI 출제위원</div>
+            <div class="hac-title">➕ 새 50문항 모의고사 AI 생성</div>
+            <div class="hac-desc">선사~현대사 정식 배점(100점 만점) 신규 회차 즉시 출제</div>
+          </button>
+          <button id="btnQuickRandomStart" class="hero-action-card accent" type="button">
+            <div class="hac-badge">⚡ 단타 훈련</div>
+            <div class="hac-title">🎯 랜덤 1문제 스피드 풀이</div>
+            <div class="hac-desc">한 문제씩 풀고 즉시 정답 확인 &amp; 사료·오답 선지 해설</div>
+          </button>
+        </div>
+
+        <!-- Generated Mock Exam Rounds List -->
+        <div class="section-block">
+          <div class="section-head">
+            <h3>📋 AI 생성 50문항 모의고사 시험지 목록</h3>
+            <span id="examCountLabel" class="muted-tag">총 1회차</span>
+          </div>
+          <div id="examRoundsList" class="exam-rounds-list"></div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: RANDOM 1-QUESTION SPEED PRACTICE ================= -->
+      <section id="tabRandom" class="tab-view">
+        <!-- Era Filter Bar -->
+        <div class="era-filter-bar" id="randomEraFilterBar">
+          <button class="era-chip active" data-era="all" type="button">전체 시대</button>
+          <button class="era-chip" data-era="era1" type="button">선사·고조선</button>
+          <button class="era-chip" data-era="era2" type="button">삼국·남북국</button>
+          <button class="era-chip" data-era="era3" type="button">고려</button>
+          <button class="era-chip" data-era="era4" type="button">조선 전기</button>
+          <button class="era-chip" data-era="era5" type="button">조선 후기</button>
+          <button class="era-chip" data-era="era6" type="button">개항기·일제</button>
+          <button class="era-chip" data-era="era7" type="button">현대사</button>
+        </div>
+
+        <!-- Question Card -->
+        <div id="randomQuestionCard" class="question-paper-card">
+          <div class="qp-meta-row">
+            <div class="qp-badges">
+              <span id="rqEraBadge" class="qp-badge era">선사·고조선</span>
+              <span id="rqPointsBadge" class="qp-badge pts">2점</span>
+              <span id="rqAiBadge" class="qp-badge ai">⚡ AI 사료 조합</span>
+            </div>
+            <span id="rqStreakText" class="streak-pill">🔥 연속 0정답</span>
+          </div>
+
+          <h2 id="rqStem" class="qp-stem">문제를 불러오는 중입니다...</h2>
+
+          <div id="rqSourceBox" class="qp-source-box"></div>
+
+          <div id="rqChoicesList" class="qp-choices-list"></div>
+
+          <!-- Instant Result & Detailed Explanation Box (Hidden until user selects a choice) -->
+          <div id="rqExplanationBox" class="explanation-panel hidden">
+            <div id="rqResultBanner" class="exp-result-banner"></div>
+            <div class="exp-keywords-row" id="rqKeywordsRow"></div>
+            <div class="exp-main-text" id="rqExpText"></div>
+            <div class="exp-choices-breakdown">
+              <h4>🔍 선지별 정·오답 완벽 분석</h4>
+              <ul id="rqChoiceDetailsList"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Action Bar inside Random Practice -->
+        <div class="sticky-practice-bar">
+          <button id="btnAiLiveSingle" class="btn-action ai-btn" type="button">
+            <span>🤖 AI 실시간 신규출제</span>
+          </button>
+          <button id="btnNextRandomQ" class="btn-action next-btn" type="button">
+            <span>다음 랜덤 문제 ➔</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: 50-QUESTION MOCK EXAM ARENA ================= -->
+      <section id="tabExam" class="tab-view">
+        <!-- Exam Top Control Bar -->
+        <div class="exam-top-bar">
+          <div class="exam-info-left">
+            <strong id="examTitleText">제1회 AI 모의고사</strong>
+            <span id="examProgressText" class="exam-prog-pill">1 / 50번</span>
+          </div>
+          <div class="exam-info-right">
+            <span id="examTimerText" class="timer-pill">⏱️ 80:00</span>
+            <button id="btnToggleOmr" class="small-outline-btn" type="button">📋 OMR (0/50)</button>
+            <button id="btnSubmitExam" class="small-primary-btn" type="button">채점·제출</button>
+          </div>
+        </div>
+
+        <!-- Collapsible OMR 50-Question Grid Drawer -->
+        <div id="omrDrawer" class="omr-drawer hidden">
+          <div class="omr-drawer-head">
+            <span>📋 OMR 답안 마킹 현황 (번호 터치 시 즉시 이동)</span>
+            <button id="btnCloseOmr" class="text-close-btn" type="button">닫기 ✕</button>
+          </div>
+          <div id="omrGrid" class="omr-grid"></div>
+        </div>
+
+        <!-- Active Exam QuestionView -->
+        <div id="examActiveArea" class="question-paper-card">
+          <div class="qp-meta-row">
+            <div class="qp-badges">
+              <span id="exQNumBadge" class="qp-badge qnum">문항 1</span>
+              <span id="exEraBadge" class="qp-badge era">선사·고조선</span>
+              <span id="exPointsBadge" class="qp-badge pts">2점</span>
+            </div>
+            <button id="btnBookmarkExamQ" class="bookmark-btn" type="button">☆ 별표 체크</button>
+          </div>
+
+          <h2 id="exStem" class="qp-stem"></h2>
+          <div id="exSourceBox" class="qp-source-box"></div>
+          <div id="exChoicesList" class="qp-choices-list"></div>
+        </div>
+
+        <!-- Exam Bottom Navigation Bar -->
+        <div class="sticky-practice-bar three-btns" id="examNavFooter">
+          <button id="btnExamPrev" class="btn-action secondary-btn" type="button">◀ 이전 문제</button>
+          <button id="btnExamOmrBottom" class="btn-action secondary-btn" type="button">📋 OMR 카드</button>
+          <button id="btnExamNext" class="btn-action next-btn" type="button">다음 문제 ▶</button>
+        </div>
+
+        <!-- Exam Graded Result & Full 50 Review Section (Shown after submitting) -->
+        <div id="examResultArea" class="exam-result-area hidden">
+          <div class="score-certificate-card">
+            <div id="certGradeBadge" class="cert-grade-pill">🏆 1급 합격!</div>
+            <div class="cert-score-big"><span id="certTotalScore">92</span> <small>/ 100점</small></div>
+            <p id="certSummaryMsg" class="cert-summary-msg"></p>
+            <div id="certEraBreakdown" class="cert-era-breakdown"></div>
+            <div class="cert-btn-row">
+              <button id="btnReviewAll" class="filter-pill active" type="button">전체 해설 (50)</button>
+              <button id="btnReviewWrong" class="filter-pill" type="button">❌ 틀린 문제만</button>
+              <button id="btnReviewStarred" class="filter-pill" type="button">⭐ 별표 문제만</button>
+            </div>
+          </div>
+          <div id="examReviewList" class="exam-review-list"></div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: WRONG ANSWER NOTE & ERA SUMMARY ================= -->
+      <section id="tabNotes" class="tab-view">
+        <div class="subtab-switch-row">
+          <button id="btnSubtabWrong" class="subtab-btn active" type="button">❌ 나의 오답노트</button>
+          <button id="btnSubtabSummary" class="subtab-btn" type="button">📚 시대별 핵심 암기장</button>
+        </div>
+
+        <div id="wrongNotesContainer" class="notes-list-container"></div>
+        <div id="eraSummaryContainer" class="notes-list-container hidden"></div>
+      </section>
+    </main>
+
+    <!-- BOTTOM 4-TAB NAVIGATION BAR -->
+    <nav class="bottom-tab-bar">
+      <button class="nav-tab-btn active" data-target="tabHome" type="button">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-lbl">홈·모의고사</span>
+      </button>
+      <button class="nav-tab-btn" data-target="tabRandom" type="button">
+        <span class="nav-icon">⚡</span>
+        <span class="nav-lbl">1문제 스피드</span>
+      </button>
+      <button class="nav-tab-btn" data-target="tabExam" type="button">
+        <span class="nav-icon">📝</span>
+        <span class="nav-lbl">50문항 시험장</span>
+      </button>
+      <button class="nav-tab-btn" data-target="tabNotes" type="button">
+        <span class="nav-icon">📓</span>
+        <span class="nav-lbl">오답·암기장</span>
+      </button>
+    </nav>
+
+    <!-- AI SETTINGS & CUSTOM GENERATOR MODAL -->
+    <div id="aiConfigModal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3>🤖 AI 문제 생성 엔진 설정</h3>
+          <button class="close-modal-btn" data-close="aiConfigModal" type="button">✕</button>
+        </div>
+        <p class="modal-desc">
+          기본적으로 <b>내장 한국사 사료 지식그래프 AI 엔진 + 무료 클라우드 AI</b>가 작동하여 별도 키 없이도 모의고사와 실시간 문제를 무제한 생성합니다.
+          본인의 Google Gemini API 키를 입력하면 초고속 Gemini 2.5 Flash 실시간 사료 출제도 이용할 수 있습니다.
+        </p>
+        <label class="input-label" for="inputGeminiKey">🔑 선택사항: Gemini API Key (브라우저에만 안전 저장)</label>
+        <input id="inputGeminiKey" class="text-input" type="password" placeholder="AIzaSy... (미입력 시 기본 하이브리드 AI 사용)" />
+        <div class="modal-btn-row">
+          <button id="btnSaveAiKey" class="btn-action next-btn" type="button">저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PWA INSTALL GUIDE MODAL -->
+    <div id="pwaGuideModal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3>📲 홈 화면에 앱(PWA)으로 설치하기</h3>
+          <button class="close-modal-btn" data-close="pwaGuideModal" type="button">✕</button>
+        </div>
+        <div class="pwa-steps">
+          <div class="pwa-step-card">
+            <strong>🍎 iPhone / iPad (Safari)</strong>
+            <p>하단 <b>공유 버튼 [📤]</b> 터치 ➔ <b>[홈 화면에 추가]</b>를 선택하면 전체화면 앱으로 설치됩니다.</p>
+          </div>
+          <div class="pwa-step-card">
+            <strong>🤖 Android (Chrome)</strong>
+            <p>우측 상단 메뉴 <b>[⋮]</b> 터치 ➔ <b>[앱 설치]</b> 또는 <b>[홈 화면에 추가]</b>를 선택하세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastMsg" class="toast-msg hidden"></div>
+  </div>
+
+  <script src="./questions.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
